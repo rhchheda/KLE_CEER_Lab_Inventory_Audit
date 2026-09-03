@@ -531,6 +531,32 @@
   <div class="toast-wrap" id="toastWrap"></div>
 
   <script>
+    // ============= GAS CONFIGURATION =============
+    // IMPORTANT: Replace with your actual GAS Web App deployment URL
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuQxbueL0kFr0mZZz04AbMavAjIbcK32SA714zdbnxfD2nsIzVqpQDewY7HcVqEI54kw/exec';
+
+    // ============= API WRAPPER FUNCTIONS =============
+    async function callGAS(action, params = {}) {
+      try {
+        const request = { action, ...params };
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(request),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        return data;
+      } catch(err) {
+        console.error('GAS API Error:', err);
+        return { success: false, error: err.toString() };
+      }
+    }
+
+    async function performLoginWithGAS(email, password) {
+      const response = await callGAS('verifyLogin', { email, password });
+      return response;
+    }
+
     // User session state
     let currentUser = {
       email: '',
@@ -545,7 +571,7 @@
       'Admin': ['dashboard', 'audit', 'reports', 'users', 'settings']
     };
 
-    function performLogin() {
+    async function performLogin() {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const errorEl = document.getElementById('loginError');
@@ -555,22 +581,19 @@
         return;
       }
 
-      // Mock login - in real app, connect to GAS backend
-      // google.script.run.verifyUserLogin(email, password)
+      // Try GAS backend first
+      const loginResponse = await performLoginWithGAS(email, password);
 
-      // Simulate different roles based on email
-      if (email.includes('admin')) {
-        currentUser.role = 'Admin';
-      } else if (email.includes('lead')) {
-        currentUser.role = 'Lead';
+      if(loginResponse.success) {
+        currentUser.email = email;
+        currentUser.role = loginResponse.role || 'Auditor';
+        currentUser.store = loginResponse.store || 'LHC 203';
+
+        showToast('✓ Login successful!', `Welcome ${currentUser.role}`, 'success');
+        setTimeout(() => initializeDashboard(), 500);
       } else {
-        currentUser.role = 'Auditor';
+        errorEl.textContent = loginResponse.error || 'Invalid credentials';
       }
-
-      currentUser.email = email;
-
-      showToast('✓ Login successful!', `Welcome ${currentUser.role}`, 'success');
-      setTimeout(() => initializeDashboard(), 500);
     }
 
     function initializeDashboard() {
