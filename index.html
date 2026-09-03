@@ -301,7 +301,7 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="mark">🎓</div>
+        <div class="mark"><img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/KLE_Logo.png" alt="KLE" style="width: 100%; height: 100%; object-fit: contain;" /></div>
         <div>
           <div class="brand-name">KLE Inventory</div>
           <div class="brand-sub">Item Lookup & Search</div>
@@ -313,8 +313,26 @@
     </div>
   </header>
 
-  <section class="hero">
-    <div class="hero-inner">
+  <!-- CAROUSEL: LAB IMAGES (Background) + HERO TITLE OVERLAY -->
+  <section class="hero" style="position: relative; overflow: hidden; min-height: 600px; display: flex; align-items: center;">
+    <!-- Carousel Background -->
+    <div class="gallery" id="galleryTrack" style="position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%;">
+      <div class="slide" style="width: 100%; height: 100%;">
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-103-ground-floor.jpg" alt="LHC 103 - Ground Floor" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+103+-+Ground+Floor'" />
+      </div>
+      <div class="slide" style="width: 100%; height: 100%;">
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-203-second-floor.jpg" alt="LHC 203 - Second Floor" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+203+-+Second+Floor'" />
+      </div>
+      <div class="slide" style="width: 100%; height: 100%;">
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-303-third-floor.jpg" alt="LHC 303 - Third Floor" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+303+-+Third+Floor'" />
+      </div>
+    </div>
+
+    <!-- Dark overlay for readability -->
+    <div style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(13,27,62,0.75), rgba(13,27,62,0.55)); z-index: 1;"></div>
+
+    <!-- Hero Content (Overlay) -->
+    <div class="hero-inner" style="position: relative; z-index: 2;">
       <div>
         <div class="eyebrow">KLE-C-SHInE, Hubballi · Project Clinic</div>
         <h1>Inventory <em>Lookup</em></h1>
@@ -328,46 +346,18 @@
         </div>
       </div>
       <div style="border:1px solid rgba(201,168,76,0.3); padding:18px; border-radius:10px; background: linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)); box-shadow: 0 18px 46px rgba(0,0,0,0.18)">
-        <div style="color:rgba(255,255,255,0.5); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase">Database Status</div>
-        <div style="margin-top:6px; color:var(--gold-2); font-family:'JetBrains Mono',monospace; font-size:12px"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#37d47e; margin-right:7px; vertical-align:1px; box-shadow:0 0 0 3px rgba(55,212,126,0.22)"></span>Active</div>
+        <div style="color:rgba(255,255,255,0.5); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase">GAS Connection Status</div>
+        <div style="margin-top:6px; color:var(--gold-2); font-family:'JetBrains Mono',monospace; font-size:12px"><span id="statusDot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#ffa500; margin-right:7px; vertical-align:1px; box-shadow:0 0 0 3px rgba(255,165,0,0.22)"></span><span id="statusText">Connecting...</span></div>
         <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.68); font-size:12px; line-height:1.5">
-          <b>Total Stores:</b> 3<br/>
-          <b>Total Items:</b> 290<br/>
-          <b>Last Updated:</b> 18-Aug-2026
+          <b>Total Stores:</b> <span id="kpiStores">3</span><br/>
+          <b>Total Items:</b> <span id="kpiItems">--</span><br/>
+          <b>Last Updated:</b> <span id="footerUpdated">18-Aug-2026</span>
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- CAROUSEL: LAB IMAGES (Top Hero) -->
-  <section class="gallery-band" id="galleryBand" style="margin-bottom: 0; border-radius: 0;">
-    <div class="gallery" id="galleryTrack">
-      <div class="slide">
-        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+103+-+Ground+Floor" alt="LHC 103 - Ground Floor" />
-        <figcaption>
-          <strong>LHC 103 - Ground Floor</strong><br/>
-          Electronics, Robotics & Mixed Lab Equipment
-        </figcaption>
-        <div class="index">1/3</div>
-      </div>
-      <div class="slide">
-        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+203+-+Second+Floor" alt="LHC 203 - Second Floor" />
-        <figcaption>
-          <strong>LHC 203 - Second Floor</strong><br/>
-          Advanced Electronics, Sensors & Control Systems
-        </figcaption>
-        <div class="index">2/3</div>
-      </div>
-      <div class="slide">
-        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+303+-+Third+Floor" alt="LHC 303 - Third Floor" />
-        <figcaption>
-          <strong>LHC 303 - Third Floor</strong><br/>
-          Robotics, Assembly & Integration Lab
-        </figcaption>
-        <div class="index">3/3</div>
-      </div>
-    </div>
-    <div class="gallery-dots" id="galleryDots" style="display: flex; justify-content: center; gap: 7px; padding: 12px; background: rgba(13, 27, 62, 0.9);">
+    <!-- Carousel Navigation Dots -->
+    <div id="galleryDots" style="position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); z-index: 3; display: flex; justify-content: center; gap: 7px;">
       <button aria-current="true" onclick="goToSlide(0)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
       <button onclick="goToSlide(1)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
       <button onclick="goToSlide(2)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
@@ -587,11 +577,15 @@
     async function loadInventoryData() {
       try {
         document.getElementById('loading').classList.remove('hidden');
+        updateConnectionStatus('connecting', 'Connecting to backend...');
 
         // Load stores
         const storesResponse = await callGAS('getAllStores');
         if(storesResponse.success && storesResponse.stores) {
           allStores = storesResponse.stores;
+          updateConnectionStatus('connected', '✓ Connected to GAS');
+        } else {
+          throw new Error('Failed to load stores');
         }
 
         // Load inventory from all stores
@@ -603,9 +597,9 @@
               allItems.push({
                 sl: item.sl,
                 name: item.name,
-                part: item.sl, // Use SL as part# for compatibility
+                part: item.sl,
                 spec: item.spec,
-                category: 'Electronics', // Will be enhanced with real categories
+                category: 'Electronics',
                 store: store.code,
                 location: item.location || 'Cabinet A1',
                 quantity: item.required || 0
@@ -614,19 +608,35 @@
           }
         }
 
-        // Update KPI counts
         updateKPICounts();
-
         console.log('✅ Loaded', allItems.length, 'items from GAS');
       } catch(err) {
         console.error('Data loading error:', err);
-        // Fallback to mock data if GAS unavailable
+        updateConnectionStatus('error', '⚠️ Using Mock Data');
         loadMockData();
       } finally {
         setTimeout(() => {
           document.getElementById('loading').classList.add('hidden');
         }, 600);
       }
+    }
+
+    function updateConnectionStatus(status, text) {
+      const dot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+
+      if(status === 'connecting') {
+        dot.style.background = '#ffa500';
+        dot.style.boxShadow = '0 0 0 3px rgba(255,165,0,0.22)';
+      } else if(status === 'connected') {
+        dot.style.background = '#37d47e';
+        dot.style.boxShadow = '0 0 0 3px rgba(55,212,126,0.22)';
+      } else if(status === 'error') {
+        dot.style.background = '#ff6b6b';
+        dot.style.boxShadow = '0 0 0 3px rgba(255,107,107,0.22)';
+      }
+
+      statusText.textContent = text;
     }
 
     function updateKPICounts() {
@@ -796,17 +806,18 @@
       showToast('✓ Filtered', `Showing ${category} items across all floors`, 'success');
     }
 
-    // CAROUSEL NAVIGATION
+    // CAROUSEL NAVIGATION (Background carousel)
     let currentSlide = 0;
-    const slides = document.querySelectorAll('.slide');
-    const dots = document.querySelectorAll('.gallery-dots button');
     const gallery = document.getElementById('galleryTrack');
+    const slides = gallery.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('#galleryDots button');
 
     function goToSlide(n) {
-      currentSlide = n;
-      gallery.scrollLeft = gallery.offsetWidth * currentSlide;
+      currentSlide = n % slides.length;
+      gallery.style.transform = `translateX(${-100 * currentSlide}%)`;
       dots.forEach((dot, i) => {
         dot.setAttribute('aria-current', i === currentSlide ? 'true' : 'false');
+        dot.style.background = i === currentSlide ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)';
       });
     }
 
@@ -820,11 +831,23 @@
       goToSlide(currentSlide);
     }
 
-    // Keyboard navigation for carousel
+    // Auto-rotate carousel every 8 seconds
+    setInterval(nextSlide, 8000);
+
+    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') prevSlide();
       if (e.key === 'ArrowRight') nextSlide();
     });
+
+    // Ensure gallery is styled as flexbox for horizontal scroll
+    if(gallery) {
+      gallery.style.display = 'flex';
+      gallery.style.transition = 'transform 0.6s ease-in-out';
+      gallery.querySelectorAll('.slide').forEach(slide => {
+        slide.style.flex = '0 0 100%';
+      });
+    }
   </script>
 
 </body>
