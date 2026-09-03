@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KLE Audit Portal · Secure Access</title>
+  <meta name="description" content="Inventory audit management system for authorized KLE laboratory personnel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0d1b3e;
+      --navy-2: #182b55;
+      --gold: #c9a84c;
+      --gold-2: #ead282;
+      --ink: #13203c;
+      --muted: #68758f;
+      --line: rgba(13, 27, 62, 0.12);
+      --paper: #ffffff;
+      --soft: #f5f1e8;
+      --wash: #eef3f8;
+      --green: #1f7a4d;
+      --red: #c24035;
+      --blue: #226da8;
+      --shadow: 0 18px 45px rgba(13, 27, 62, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Outfit, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    button, input { font: inherit; cursor: pointer; }
+
+    /* LOADING */
+    .loading {
+      position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+      background: var(--navy); color: white;
+    }
+    .loading.hidden { display: none; }
+    .loading-box { text-align: center; }
+    .loading-logo { font-family: "Cormorant Garamond", serif; font-size: 40px; font-weight: 600; }
+    .loading-logo span { color: var(--gold); font-style: italic; }
+    .loading-text { margin-top: 12px; color: rgba(255,255,255,0.55); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .loading-rings { position: relative; width: 86px; height: 86px; margin: 0 auto 18px; }
+    .loading-rings::before, .loading-rings::after {
+      content: ""; position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid transparent; border-top-color: var(--gold);
+      border-right-color: rgba(234,210,130,0.55); animation: spin 1.4s linear infinite;
+    }
+    .loading-rings::after {
+      inset: 12px; border-top-color: rgba(255,255,255,0.72);
+      animation-duration: 1.9s; animation-direction: reverse;
+    }
+    .loading-dot {
+      position: absolute; inset: 31px; border-radius: 50%;
+      background: var(--gold); box-shadow: 0 0 26px rgba(201,168,76,0.65);
+      animation: pulse 1.25s ease-in-out infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { transform: scale(0.78); opacity: 0.65; } 50% { transform: scale(1); opacity: 1; } }
+
+    /* LOGIN SCREEN */
+    .login-screen {
+      position: fixed; inset: 0; z-index: 50; display: grid; place-items: center;
+      background: linear-gradient(135deg, rgba(13,27,62,0.96), rgba(24,43,85,0.92)), radial-gradient(circle at 20% 20%, rgba(201,168,76,0.18), transparent 30%);
+      color: white; padding: 20px;
+    }
+    .login-screen.hidden { display: none; }
+    .login-card {
+      width: min(440px, 100%);
+      border: 1px solid rgba(201,168,76,0.32); border-radius: 10px;
+      background: rgba(255,255,255,0.08); box-shadow: 0 28px 70px rgba(0,0,0,0.24);
+      padding: 40px; backdrop-filter: blur(14px);
+    }
+    .login-title { font-family: "Cormorant Garamond", serif; font-size: 34px; line-height: 1.05; }
+    .login-title span { color: var(--gold-2); font-style: italic; }
+    .login-copy { color: rgba(255,255,255,0.62); margin: 10px 0 24px; line-height: 1.55; font-size: 13.5px; }
+    .field { border: 1px solid var(--line); background: white; border-radius: 8px; padding: 9px 11px; min-height: 38px; color: var(--ink); width: 100%; margin-bottom: 12px; font-family: inherit; }
+    .field:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+    .login-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+    .login-error { color: #ffb8b8; min-height: 18px; font-size: 13px; margin-bottom: 10px; }
+    .btn-primary { border: 1px solid var(--gold); background: var(--gold); color: var(--navy); border-radius: 8px; padding: 10px 14px; font-weight: 700; transition: all 0.2s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(201,168,76,0.3); }
+    .btn-secondary { border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); border-radius: 8px; padding: 8px 12px; font-weight: 600; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.12); }
+
+    /* NAVBAR */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(13, 27, 62, 0.96); color: white;
+      border-bottom: 1px solid rgba(201,168,76,0.24); backdrop-filter: blur(10px);
+    }
+    .topbar-inner {
+      max-width: 1240px; margin: 0 auto; padding: 11px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-name { font-size: 17px; font-weight: 700; }
+    .mark { width: 54px; height: 54px; border: 1px solid rgba(201,168,76,0.7); display: grid; place-items: center; color: var(--gold-2); font-family: "Cormorant Garamond", serif; font-size: 26px; font-weight: 600; border-radius: 9px; }
+    .brand-sub { color: rgba(255,255,255,0.5); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+    .nav { display: flex; gap: 12px; align-items: center; flex: 1; flex-wrap: wrap; }
+    .nav button { border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); min-height: 34px; border-radius: 8px; padding: 7px 14px; font-size: 13px; }
+    .nav button:hover { background: rgba(255,255,255,0.12); }
+    .nav button.active { background: var(--gold); color: var(--navy); font-weight: 700; }
+    .user-info { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.8); font-size: 12px; }
+    .user-badge { background: rgba(201,168,76,0.2); padding: 4px 10px; border-radius: 999px; color: var(--gold-2); font-weight: 600; }
+
+    /* MAIN */
+    main { max-width: 1240px; margin: 0 auto; padding: 20px 18px 56px; }
+
+    .screen { display: none; }
+    .screen.visible { display: block; }
+
+    .page-title { font-size: 28px; color: var(--navy); margin-bottom: 8px; font-weight: 700; }
+    .page-sub { color: var(--muted); margin-bottom: 20px; }
+
+    /* HERO DASHBOARD */
+    .dashboard-hero {
+      background: linear-gradient(90deg, rgba(13,27,62,0.97) 0%, rgba(24,43,85,0.7) 100%), var(--navy);
+      color: white; padding: 30px 18px; border-radius: 8px; margin-bottom: 20px;
+    }
+    .dashboard-hero h2 { font-size: 24px; margin-bottom: 8px; }
+    .dashboard-hero p { color: rgba(255,255,255,0.7); font-size: 14px; }
+
+    /* KPI GRID */
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .kpi {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+      padding: 18px; box-shadow: 0 10px 26px rgba(13,27,62,0.07);
+      position: relative; overflow: hidden;
+    }
+    .kpi::before {
+      content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--gold);
+    }
+    .kpi-label { color: var(--muted); font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
+    .kpi-value { font-family: "Cormorant Garamond", serif; font-size: 32px; margin-top: 8px; color: var(--navy); }
+    .kpi-sub { color: var(--muted); font-size: 11px; margin-top: 4px; }
+
+    /* CARDS */
+    .section-card {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+      box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px;
+    }
+    .card-head {
+      padding: 17px 18px; border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #fbfaf7);
+    }
+    .card-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+    .card-body { padding: 18px; }
+
+    /* FORMS */
+    .form-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px; margin-bottom: 15px;
+    }
+    label { display: block; color: var(--navy); font-weight: 600; margin-bottom: 6px; font-size: 13px; }
+
+    /* TABLES */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f7f9fb; color: var(--muted); padding: 11px 13px; text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
+    td { padding: 11px 13px; border-bottom: 1px solid var(--line); }
+    tbody tr:hover { background: #fbfcfd; }
+    .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 10.5px; font-weight: 700; }
+    .badge-auditor { background: #e2e3e5; color: #383d41; }
+    .badge-lead { background: #fff3cd; color: #856404; }
+    .badge-admin { background: #cfe2ff; color: #084298; }
+    .badge-complete { background: #edf5ef; color: var(--green); }
+    .badge-pending { background: #fff6df; color: var(--muted); }
+
+    /* TOAST */
+    .toast-wrap {
+      position: fixed; right: 16px; bottom: 70px; z-index: 80;
+      display: grid; gap: 10px; width: min(380px, calc(100vw - 32px));
+    }
+    .toast {
+      border-radius: 8px; border: 1px solid rgba(13,27,62,0.12); background: white;
+      box-shadow: var(--shadow); padding: 12px 14px; display: grid; gap: 3px;
+      animation: toastIn 0.25s ease both;
+    }
+    .toast-title { font-weight: 800; color: var(--navy); font-size: 13px; }
+    .toast-body { color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .toast.success { border-left: 4px solid var(--green); }
+    .toast.error { border-left: 4px solid var(--red); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* FOOTER */
+    .footer {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; height: 55px;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      background: var(--navy); color: rgba(255,255,255,0.68);
+      border-top: 1px solid rgba(201,168,76,0.24); font-size: 12px;
+      padding: 0 12px; text-align: center; flex-wrap: wrap;
+    }
+    .heart { color: #ff2f45; animation: heartbeat 1.05s ease-in-out infinite; }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      16% { transform: scale(1.28); }
+      30% { transform: scale(0.94); }
+      44% { transform: scale(1.18); }
+      60% { transform: scale(1); }
+    }
+    .footer .sep { opacity: 0.35; }
+
+    @media (max-width: 720px) {
+      .topbar-inner { flex-direction: column; align-items: flex-start; }
+      .nav { flex-wrap: wrap; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- LOADING -->
+  <div class="loading" id="loading">
+    <div class="loading-box">
+      <div class="loading-rings"><div class="loading-dot"></div></div>
+      <div class="loading-logo">KLE <span>Audit</span></div>
+      <div class="loading-text">Initializing audit portal</div>
+    </div>
+  </div>
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-title">Audit <span>Portal</span></div>
+      <div class="login-copy">Sign in to manage inventory audits, review entries, and generate reports. Your role determines access level.</div>
+
+      <input class="field" id="loginEmail" type="email" placeholder="your.email@kletech.ac.in" autocomplete="email" />
+      <input class="field" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
+
+      <div class="login-error" id="loginError"></div>
+
+      <div class="login-actions">
+        <button class="btn-primary" onclick="performLogin()">🔐 Sign In</button>
+      </div>
+
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(201,168,76,0.24); font-size: 11px; color: rgba(255,255,255,0.6); line-height: 1.5; text-align: center;">
+        <b>Roles:</b><br/>
+        👤 Auditor - Entry & Quick Audit<br/>
+        👨‍💼 Lead - Audit + Report Signing<br/>
+        👨‍💼 Admin - Full System Access
+      </div>
+    </div>
+  </div>
+
+  <!-- NAVBAR -->
+  <header class="topbar" id="navbar" style="display: none;">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark">🎓</div>
+        <div>
+          <div class="brand-name">KLE Audit</div>
+          <div class="brand-sub">Portal · RH Kulkarni Building</div>
+        </div>
+      </div>
+      <nav class="nav" id="mainNav"></nav>
+      <div class="user-info">
+        <span id="currentUser">User</span>
+        <span class="user-badge" id="roleDisplay">Auditor</span>
+        <button class="btn-secondary" onclick="logout()">🚪 Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main id="mainContent" style="display: none;">
+
+    <!-- DASHBOARD SCREEN -->
+    <div class="screen visible" id="dashboardScreen">
+      <div class="dashboard-hero">
+        <h2>📊 Welcome Back, <span id="userNameDisplay">Auditor</span></h2>
+        <p>Real-time audit status across RH Kulkarni Building labs</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">📊 Items Audited</div>
+          <div class="kpi-value">28</div>
+          <div class="kpi-sub">Out of 290 total</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">⏳ Pending</div>
+          <div class="kpi-value">262</div>
+          <div class="kpi-sub">Awaiting review</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">✅ Completion</div>
+          <div class="kpi-value">9.7%</div>
+          <div class="kpi-sub">Overall progress</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">⚠️ Issues</div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-sub">Needs attention</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="card-head">
+          <div class="card-title">📋 Recent Audit Entries</div>
+        </div>
+        <div class="card-body">
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item Name</th>
+                  <th>Store</th>
+                  <th>Auditor</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Stepper Motor NEMA17</td>
+                  <td>LHC 203</td>
+                  <td>Rajesh Kumar</td>
+                  <td>16-Aug 14:32</td>
+                  <td><span class="badge badge-complete">Complete</span></td>
+                </tr>
+                <tr>
+                  <td>Breadboard MB-102</td>
+                  <td>LHC 203</td>
+                  <td>Priya Singh</td>
+                  <td>15-Aug 11:20</td>
+                  <td><span class="badge badge-pending">Pending</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK AUDIT SCREEN (Auditor/Lead/Admin) -->
+    <div class="screen" id="auditScreen">
+      <h1 class="page-title">📝 Quick Audit Entry</h1>
+      <p class="page-sub">Fast category-aware item audit with professional feedback</p>
+
+      <div class="section-card">
+        <div class="card-body">
+          <div class="form-row">
+            <div>
+              <label>Select Store *</label>
+              <select class="field">
+                <option>-- Choose Store --</option>
+                <option>LHC 103 - Ground Floor</option>
+                <option>LHC 203 - Second Floor</option>
+                <option>LHC 303 - Third Floor</option>
+              </select>
+            </div>
+            <div>
+              <label>Select Item *</label>
+              <select class="field">
+                <option>-- Choose Item --</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="auditForm" style="margin-top: 20px;">
+            <!-- Dynamic fields populated based on item category -->
+          </div>
+
+          <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="resetAuditForm()">✕ Clear</button>
+            <button class="btn-primary" onclick="submitAudit()">✓ Submit Entry</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS SCREEN (Admin Only) -->
+    <div class="screen" id="usersScreen">
+      <h1 class="page-title">👥 User Management</h1>
+      <p class="page-sub">Manage auditors, leads, and administrators</p>
+
+      <div class="section-card">
+        <div class="card-head" style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="card-title">System Users</div>
+          <button class="btn-primary" onclick="showAddUserModal()">➕ Add User</button>
+        </div>
+        <div class="card-body">
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Store</th>
+                  <th>Role</th>
+                  <th>Added</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>rajesh.kumar@kletech.ac.in</td>
+                  <td>LHC 203</td>
+                  <td><span class="badge badge-auditor">Auditor</span></td>
+                  <td>10-Aug-2026</td>
+                  <td>Active</td>
+                </tr>
+                <tr>
+                  <td>priya.singh@kletech.ac.in</td>
+                  <td>LHC 103</td>
+                  <td><span class="badge badge-lead">Lead</span></td>
+                  <td>05-Aug-2026</td>
+                  <td>Active</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS SCREEN (Lead/Admin) -->
+    <div class="screen" id="reportsScreen">
+      <h1 class="page-title">📄 Reports & Completion</h1>
+      <p class="page-sub">Generate professional audit reports and completion summaries</p>
+
+      <div class="section-card">
+        <div class="card-head">
+          <div class="card-title">Generate Report</div>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div>
+              <label>Report Type *</label>
+              <select class="field">
+                <option>-- Select Type --</option>
+                <option>📊 Audit Summary</option>
+                <option>📋 Detailed Inventory</option>
+                <option>⚠️ Issues Report</option>
+                <option>✅ Completion Report</option>
+              </select>
+            </div>
+            <div>
+              <label>Store/Floor *</label>
+              <select class="field">
+                <option>-- Select --</option>
+                <option>LHC 103 - Ground Floor</option>
+                <option>LHC 203 - Second Floor</option>
+                <option>LHC 303 - Third Floor</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary" onclick="generateReport()">📄 Generate PDF Report</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS SCREEN (Admin Only) -->
+    <div class="screen" id="settingsScreen">
+      <h1 class="page-title">⚙️ Settings & Configuration</h1>
+      <p class="page-sub">System configuration and audit parameters</p>
+
+      <div class="section-card">
+        <div class="card-head">
+          <div class="card-title">System Settings</div>
+        </div>
+        <div class="card-body">
+          <div class="form-row">
+            <div>
+              <label>Organization</label>
+              <input class="field" value="KLE Technological University" disabled />
+            </div>
+            <div>
+              <label>Building</label>
+              <input class="field" value="RH Kulkarni Building" disabled />
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label>Audit Lead Email</label>
+              <input class="field" type="email" placeholder="lead@kletech.ac.in" />
+            </div>
+            <div>
+              <label>Audit Period (Days)</label>
+              <input class="field" type="number" value="30" />
+            </div>
+          </div>
+          <button class="btn-primary" onclick="saveSettings()">✓ Save Settings</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <span>Made with</span>
+    <span class="heart">❤</span>
+    <span>~rhc</span>
+    <span class="sep">·</span>
+    <span>Project Clinic, KLE-C-SHInE</span>
+    <span class="sep">·</span>
+    <span id="lastUpdated">Last updated 18-Aug-2026 03:02 IST</span>
+  </footer>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script>
+    // User session state
+    let currentUser = {
+      email: '',
+      role: 'Auditor', // Auditor, Lead, Admin
+      store: 'LHC 203'
+    };
+
+    // Role-based menu items
+    const menuConfig = {
+      'Auditor': ['dashboard', 'audit'],
+      'Lead': ['dashboard', 'audit', 'reports'],
+      'Admin': ['dashboard', 'audit', 'reports', 'users', 'settings']
+    };
+
+    function performLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const errorEl = document.getElementById('loginError');
+
+      if (!email || !password) {
+        errorEl.textContent = 'Please enter email and password.';
+        return;
+      }
+
+      // Mock login - in real app, connect to GAS backend
+      // google.script.run.verifyUserLogin(email, password)
+
+      // Simulate different roles based on email
+      if (email.includes('admin')) {
+        currentUser.role = 'Admin';
+      } else if (email.includes('lead')) {
+        currentUser.role = 'Lead';
+      } else {
+        currentUser.role = 'Auditor';
+      }
+
+      currentUser.email = email;
+
+      showToast('✓ Login successful!', `Welcome ${currentUser.role}`, 'success');
+      setTimeout(() => initializeDashboard(), 500);
+    }
+
+    function initializeDashboard() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('navbar').style.display = 'block';
+      document.getElementById('mainContent').style.display = 'block';
+      document.getElementById('loading').classList.add('hidden');
+
+      // Update user info
+      document.getElementById('currentUser').textContent = currentUser.email.split('@')[0];
+      document.getElementById('userNameDisplay').textContent = currentUser.role;
+      document.getElementById('roleDisplay').textContent = currentUser.role;
+      document.getElementById('roleDisplay').className = `user-badge badge-${currentUser.role.toLowerCase()}`;
+
+      // Build role-based menu
+      buildMenu();
+    }
+
+    function buildMenu() {
+      const nav = document.getElementById('mainNav');
+      nav.innerHTML = '';
+
+      const menuItems = {
+        'dashboard': { icon: '📊', label: 'Dashboard' },
+        'audit': { icon: '📝', label: 'Quick Audit' },
+        'reports': { icon: '📄', label: 'Reports' },
+        'users': { icon: '👥', label: 'Users' },
+        'settings': { icon: '⚙️', label: 'Settings' }
+      };
+
+      const allowedMenus = menuConfig[currentUser.role] || ['dashboard'];
+
+      allowedMenus.forEach(menuId => {
+        const item = menuItems[menuId];
+        const btn = document.createElement('button');
+        btn.textContent = `${item.icon} ${item.label}`;
+        btn.onclick = () => switchScreen(menuId);
+        btn.className = menuId === 'dashboard' ? 'active' : '';
+        nav.appendChild(btn);
+      });
+    }
+
+    function switchScreen(screenId) {
+      // Update active button
+      document.querySelectorAll('#mainNav button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+
+      // Show screen
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+      document.getElementById(screenId + 'Screen').classList.add('visible');
+    }
+
+    function submitAudit() {
+      showToast('✓ Audit entry saved!', 'Item recorded successfully', 'success');
+    }
+
+    function resetAuditForm() {
+      document.querySelectorAll('#auditForm input, #auditForm select').forEach(el => el.value = '');
+    }
+
+    function generateReport() {
+      showToast('📄 Report generated', 'PDF download starting...', 'success');
+    }
+
+    function showAddUserModal() {
+      showToast('👥 Add User', 'User modal would open here', 'success');
+    }
+
+    function saveSettings() {
+      showToast('✓ Settings saved', 'Configuration updated', 'success');
+    }
+
+    function logout() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('navbar').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'none';
+      document.getElementById('loginEmail').value = '';
+      document.getElementById('loginPassword').value = '';
+      document.getElementById('loginError').textContent = '';
+      showToast('🚪 Logged out', 'See you next time!', 'success');
+    }
+
+    function showToast(title, body, type) {
+      const el = document.createElement('div');
+      el.className = 'toast ' + (type || 'info');
+      el.innerHTML = `<div class="toast-title">${escapeHtml(title)}</div><div class="toast-body">${escapeHtml(body)}</div>`;
+      document.getElementById('toastWrap').appendChild(el);
+      setTimeout(() => el.remove(), type === 'error' ? 7000 : 4600);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+      }, 600);
+    });
+
+    // Allow Enter key to login
+    document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') performLogin();
+    });
+  </script>
+
+</body>
+</html>
