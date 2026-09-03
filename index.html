@@ -556,18 +556,115 @@
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
   <script>
-    // Mock data with Location/Storage
-    const allItems = [
-      { sl: 1, name: 'Stepper Motor NEMA17', part: 'STM-N17-001', spec: '17Nm Holding Torque, 1.6A Current', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A1', quantity: 28 },
-      { sl: 2, name: 'DC Motor 12V', part: 'DCM-12V-002', spec: '100RPM, 300mA', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A2', quantity: 12 },
-      { sl: 3, name: 'Servo Motor MG996R', part: 'SRV-MG996-003', spec: '4.8-6V, 55g', category: 'Electronics', store: 'LHC 303', location: 'Shelf B1', quantity: 15 },
-      { sl: 4, name: 'Gear Set 20T', part: 'GR-20T-004', spec: 'Spur Gears, Plastic', category: 'Mechanical', store: 'LHC 303', location: 'Lab Bench 1', quantity: 32 },
-      { sl: 5, name: 'Breadboard MB-102', part: 'BB-MB102-005', spec: '830 Contacts, 165x55mm', category: 'Hardware', store: 'LHC 203', location: 'Drawer C1', quantity: 85 },
-      { sl: 6, name: 'Jumper Wires Set', part: 'JMP-SET-006', spec: 'M-M, M-F, F-F, 40pcs', category: 'Consumable', store: 'LHC 103', location: 'Storage Box', quantity: 48 },
-      { sl: 7, name: 'Two-Wheel Bot Kit', part: 'KIT-2WHL-007', spec: 'Complete assembly package', category: 'Assembly/Kit', store: 'LHC 303', location: 'Lab Bench 2', quantity: 18 },
-      { sl: 8, name: 'Bolt M3x10', part: 'BLT-M3-008', spec: 'Stainless Steel, 10mm', category: 'Hardware', store: 'LHC 103', location: 'Cabinet A3', quantity: 200 },
-      { sl: 9, name: 'Screwdriver Set', part: 'SDV-SET-009', spec: '8 pieces, Magnetic', category: 'Tools', store: 'LHC 103', location: 'Extra Box', quantity: 6 },
+    // ============= GAS CONFIGURATION =============
+    // IMPORTANT: Replace with your actual GAS Web App deployment URL
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuQxbueL0kFr0mZZz04AbMavAjIbcK32SA714zdbnxfD2nsIzVqpQDewY7HcVqEI54kw/exec';
+
+    let allItems = [];
+    let allStores = [
+      { code: 'LHC 103', name: 'LHC 103 - Ground Floor', location: 'RH Kulkarni Building' },
+      { code: 'LHC 203', name: 'LHC 203 - Second Floor', location: 'RH Kulkarni Building' },
+      { code: 'LHC 303', name: 'LHC 303 - Third Floor', location: 'RH Kulkarni Building' }
     ];
+
+    // ============= API WRAPPER FUNCTIONS =============
+    async function callGAS(action, params = {}) {
+      try {
+        const request = { action, ...params };
+        const response = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(request),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json();
+        return data;
+      } catch(err) {
+        console.error('GAS API Error:', err);
+        return { success: false, error: err.toString() };
+      }
+    }
+
+    async function loadInventoryData() {
+      try {
+        document.getElementById('loading').classList.remove('hidden');
+
+        // Load stores
+        const storesResponse = await callGAS('getAllStores');
+        if(storesResponse.success && storesResponse.stores) {
+          allStores = storesResponse.stores;
+        }
+
+        // Load inventory from all stores
+        allItems = [];
+        for(let store of allStores) {
+          const invResponse = await callGAS('getInventory', { store: store.code });
+          if(invResponse.success && invResponse.items) {
+            invResponse.items.forEach(item => {
+              allItems.push({
+                sl: item.sl,
+                name: item.name,
+                part: item.sl, // Use SL as part# for compatibility
+                spec: item.spec,
+                category: 'Electronics', // Will be enhanced with real categories
+                store: store.code,
+                location: item.location || 'Cabinet A1',
+                quantity: item.required || 0
+              });
+            });
+          }
+        }
+
+        // Update KPI counts
+        updateKPICounts();
+
+        console.log('✅ Loaded', allItems.length, 'items from GAS');
+      } catch(err) {
+        console.error('Data loading error:', err);
+        // Fallback to mock data if GAS unavailable
+        loadMockData();
+      } finally {
+        setTimeout(() => {
+          document.getElementById('loading').classList.add('hidden');
+        }, 600);
+      }
+    }
+
+    function updateKPICounts() {
+      const stores = [...new Set(allItems.map(i => i.store))].length;
+      const items = allItems.length;
+      const electronics = allItems.filter(i => i.category === 'Electronics').length;
+      const mechanical = allItems.filter(i => i.category === 'Mechanical').length;
+      const consumable = allItems.filter(i => i.category === 'Consumable').length;
+      const kit = allItems.filter(i => i.category === 'Assembly/Kit').length;
+      const hardware = allItems.filter(i => i.category === 'Hardware').length;
+      const tools = allItems.filter(i => i.category === 'Tools').length;
+
+      document.getElementById('kpiStores').textContent = stores;
+      document.getElementById('kpiItems').textContent = items;
+      document.getElementById('kpiElectronics').textContent = electronics;
+      document.getElementById('kpiMechanical').textContent = mechanical;
+      document.getElementById('kpiConsumable').textContent = consumable;
+      document.getElementById('kpiKit').textContent = kit;
+      document.getElementById('kpiHardware').textContent = hardware;
+      document.getElementById('kpiTools').textContent = tools;
+    }
+
+    function loadMockData() {
+      // Mock data with Location/Storage - fallback only
+      allItems = [
+        { sl: 1, name: 'Stepper Motor NEMA17', part: 'STM-N17-001', spec: '17Nm Holding Torque, 1.6A Current', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A1', quantity: 28 },
+        { sl: 2, name: 'DC Motor 12V', part: 'DCM-12V-002', spec: '100RPM, 300mA', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A2', quantity: 12 },
+        { sl: 3, name: 'Servo Motor MG996R', part: 'SRV-MG996-003', spec: '4.8-6V, 55g', category: 'Electronics', store: 'LHC 303', location: 'Shelf B1', quantity: 15 },
+        { sl: 4, name: 'Gear Set 20T', part: 'GR-20T-004', spec: 'Spur Gears, Plastic', category: 'Mechanical', store: 'LHC 303', location: 'Lab Bench 1', quantity: 32 },
+        { sl: 5, name: 'Breadboard MB-102', part: 'BB-MB102-005', spec: '830 Contacts, 165x55mm', category: 'Hardware', store: 'LHC 203', location: 'Drawer C1', quantity: 85 },
+        { sl: 6, name: 'Jumper Wires Set', part: 'JMP-SET-006', spec: 'M-M, M-F, F-F, 40pcs', category: 'Consumable', store: 'LHC 103', location: 'Storage Box', quantity: 48 },
+        { sl: 7, name: 'Two-Wheel Bot Kit', part: 'KIT-2WHL-007', spec: 'Complete assembly package', category: 'Assembly/Kit', store: 'LHC 303', location: 'Lab Bench 2', quantity: 18 },
+        { sl: 8, name: 'Bolt M3x10', part: 'BLT-M3-008', spec: 'Stainless Steel, 10mm', category: 'Hardware', store: 'LHC 103', location: 'Cabinet A3', quantity: 200 },
+        { sl: 9, name: 'Screwdriver Set', part: 'SDV-SET-009', spec: '8 pieces, Magnetic', category: 'Tools', store: 'LHC 103', location: 'Extra Box', quantity: 6 },
+      ];
+      updateKPICounts();
+      showToast('⚠️ Using Mock Data', 'GAS backend not connected. Check GAS_URL configuration.', 'error');
+    }
 
     function showLoginModal() {
       document.getElementById('loginScreen').classList.add('show');
@@ -669,9 +766,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        document.getElementById('loading').classList.add('hidden');
-      }, 600);
+      loadInventoryData();
     });
 
     document.getElementById('loginPassword').addEventListener('keypress', (e) => {
