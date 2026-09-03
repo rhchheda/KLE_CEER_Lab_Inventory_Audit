@@ -339,51 +339,42 @@
     </div>
   </section>
 
+  <!-- CAROUSEL: LAB IMAGES (Top Hero) -->
+  <section class="gallery-band" id="galleryBand" style="margin-bottom: 0; border-radius: 0;">
+    <div class="gallery" id="galleryTrack">
+      <div class="slide">
+        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+103+-+Ground+Floor" alt="LHC 103 - Ground Floor" />
+        <figcaption>
+          <strong>LHC 103 - Ground Floor</strong><br/>
+          Electronics, Robotics & Mixed Lab Equipment
+        </figcaption>
+        <div class="index">1/3</div>
+      </div>
+      <div class="slide">
+        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+203+-+Second+Floor" alt="LHC 203 - Second Floor" />
+        <figcaption>
+          <strong>LHC 203 - Second Floor</strong><br/>
+          Advanced Electronics, Sensors & Control Systems
+        </figcaption>
+        <div class="index">2/3</div>
+      </div>
+      <div class="slide">
+        <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+303+-+Third+Floor" alt="LHC 303 - Third Floor" />
+        <figcaption>
+          <strong>LHC 303 - Third Floor</strong><br/>
+          Robotics, Assembly & Integration Lab
+        </figcaption>
+        <div class="index">3/3</div>
+      </div>
+    </div>
+    <div class="gallery-dots" id="galleryDots" style="display: flex; justify-content: center; gap: 7px; padding: 12px; background: rgba(13, 27, 62, 0.9);">
+      <button aria-current="true" onclick="goToSlide(0)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
+      <button onclick="goToSlide(1)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
+      <button onclick="goToSlide(2)" style="width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0; background: rgba(255,255,255,0.4); cursor: pointer;"></button>
+    </div>
+  </section>
+
   <main>
-    <!-- CAROUSEL: LAB GALLERIES -->
-    <section class="gallery-band" id="galleryBand">
-      <div class="gallery-head">
-        <div>
-          <div class="section-title">📷 Laboratory Facilities</div>
-          <div class="section-sub">RH Kulkarni Building, BVBCET Campus, Vidyanagar</div>
-        </div>
-        <div class="gallery-nav">
-          <button class="ghost" id="galPrev" type="button" onclick="prevSlide()">&#8592;</button>
-          <button class="ghost" id="galNext" type="button" onclick="nextSlide()">&#8594;</button>
-        </div>
-      </div>
-      <div class="gallery" id="galleryTrack">
-        <div class="slide">
-          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+103+-+Ground+Floor" alt="LHC 103 - Ground Floor" />
-          <figcaption>
-            <strong>LHC 103 - Ground Floor</strong><br/>
-            Electronics, Robotics & Mixed Lab Equipment
-          </figcaption>
-          <div class="index">1/3</div>
-        </div>
-        <div class="slide">
-          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+203+-+Second+Floor" alt="LHC 203 - Second Floor" />
-          <figcaption>
-            <strong>LHC 203 - Second Floor</strong><br/>
-            Advanced Electronics, Sensors & Control Systems
-          </figcaption>
-          <div class="index">2/3</div>
-        </div>
-        <div class="slide">
-          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+303+-+Third+Floor" alt="LHC 303 - Third Floor" />
-          <figcaption>
-            <strong>LHC 303 - Third Floor</strong><br/>
-            Robotics, Assembly & Integration Lab
-          </figcaption>
-          <div class="index">3/3</div>
-        </div>
-      </div>
-      <div class="gallery-dots" id="galleryDots">
-        <button aria-current="true" onclick="goToSlide(0)"></button>
-        <button onclick="goToSlide(1)"></button>
-        <button onclick="goToSlide(2)"></button>
-      </div>
-    </section>
 
     <!-- KPI TILES - CATEGORY WISE & STORE WISE (CLICKABLE) -->
     <div class="kpis" id="publicKpis">
@@ -437,6 +428,24 @@
       </div>
       <div class="toolbar">
         <input class="field" id="searchInput" placeholder="Search by Part#, Item Name, or Specification..." />
+        <select class="field" id="locationFilter">
+          <option value="">-- All Locations --</option>
+          <option value="Cabinet A1">Cabinet A1</option>
+          <option value="Cabinet A2">Cabinet A2</option>
+          <option value="Cabinet A3">Cabinet A3</option>
+          <option value="Shelf B1">Shelf B1</option>
+          <option value="Shelf B2">Shelf B2</option>
+          <option value="Shelf B3">Shelf B3</option>
+          <option value="Drawer C1">Drawer C1</option>
+          <option value="Drawer C2">Drawer C2</option>
+          <option value="Drawer C3">Drawer C3</option>
+          <option value="Lab Bench 1">Lab Bench 1</option>
+          <option value="Lab Bench 2">Lab Bench 2</option>
+          <option value="Lab Bench 3">Lab Bench 3</option>
+          <option value="Storage Box">Storage Box</option>
+          <option value="Extra Box">Extra Box</option>
+          <option value="Not Found">Not Found</option>
+        </select>
         <button style="border:1px solid var(--gold); background:var(--gold); color:var(--navy); border-radius:8px; padding:9px 16px; font-weight:600" onclick="performSearch()">Search</button>
       </div>
       <div class="table-scroll">
@@ -449,11 +458,12 @@
               <th>Specification</th>
               <th>Category</th>
               <th>Store</th>
+              <th>Location</th>
               <th>Total Stock</th>
             </tr>
           </thead>
           <tbody id="searchResults">
-            <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">Enter search query to find items</td></tr>
+            <tr><td colspan="8" style="text-align:center; padding:40px; color:var(--muted)">Enter search query to find items</td></tr>
           </tbody>
         </table>
       </div>
@@ -546,17 +556,17 @@
   <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
 
   <script>
-    // Mock data
+    // Mock data with Location/Storage
     const allItems = [
-      { sl: 1, name: 'Stepper Motor NEMA17', part: 'STM-N17-001', spec: '17Nm Holding Torque, 1.6A Current', category: 'Electronics', store: 'LHC 203', quantity: 28 },
-      { sl: 2, name: 'DC Motor 12V', part: 'DCM-12V-002', spec: '100RPM, 300mA', category: 'Electronics', store: 'LHC 203', quantity: 12 },
-      { sl: 3, name: 'Servo Motor MG996R', part: 'SRV-MG996-003', spec: '4.8-6V, 55g', category: 'Electronics', store: 'LHC 303', quantity: 15 },
-      { sl: 4, name: 'Gear Set 20T', part: 'GR-20T-004', spec: 'Spur Gears, Plastic', category: 'Mechanical', store: 'LHC 303', quantity: 32 },
-      { sl: 5, name: 'Breadboard MB-102', part: 'BB-MB102-005', spec: '830 Contacts, 165x55mm', category: 'Hardware', store: 'LHC 203', quantity: 85 },
-      { sl: 6, name: 'Jumper Wires Set', part: 'JMP-SET-006', spec: 'M-M, M-F, F-F, 40pcs', category: 'Consumable', store: 'LHC 103', quantity: 48 },
-      { sl: 7, name: 'Two-Wheel Bot Kit', part: 'KIT-2WHL-007', spec: 'Complete assembly package', category: 'Assembly/Kit', store: 'LHC 303', quantity: 18 },
-      { sl: 8, name: 'Bolt M3x10', part: 'BLT-M3-008', spec: 'Stainless Steel, 10mm', category: 'Hardware', store: 'LHC 103', quantity: 200 },
-      { sl: 9, name: 'Screwdriver Set', part: 'SDV-SET-009', spec: '8 pieces, Magnetic', category: 'Tools', store: 'LHC 103', quantity: 6 },
+      { sl: 1, name: 'Stepper Motor NEMA17', part: 'STM-N17-001', spec: '17Nm Holding Torque, 1.6A Current', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A1', quantity: 28 },
+      { sl: 2, name: 'DC Motor 12V', part: 'DCM-12V-002', spec: '100RPM, 300mA', category: 'Electronics', store: 'LHC 203', location: 'Cabinet A2', quantity: 12 },
+      { sl: 3, name: 'Servo Motor MG996R', part: 'SRV-MG996-003', spec: '4.8-6V, 55g', category: 'Electronics', store: 'LHC 303', location: 'Shelf B1', quantity: 15 },
+      { sl: 4, name: 'Gear Set 20T', part: 'GR-20T-004', spec: 'Spur Gears, Plastic', category: 'Mechanical', store: 'LHC 303', location: 'Lab Bench 1', quantity: 32 },
+      { sl: 5, name: 'Breadboard MB-102', part: 'BB-MB102-005', spec: '830 Contacts, 165x55mm', category: 'Hardware', store: 'LHC 203', location: 'Drawer C1', quantity: 85 },
+      { sl: 6, name: 'Jumper Wires Set', part: 'JMP-SET-006', spec: 'M-M, M-F, F-F, 40pcs', category: 'Consumable', store: 'LHC 103', location: 'Storage Box', quantity: 48 },
+      { sl: 7, name: 'Two-Wheel Bot Kit', part: 'KIT-2WHL-007', spec: 'Complete assembly package', category: 'Assembly/Kit', store: 'LHC 303', location: 'Lab Bench 2', quantity: 18 },
+      { sl: 8, name: 'Bolt M3x10', part: 'BLT-M3-008', spec: 'Stainless Steel, 10mm', category: 'Hardware', store: 'LHC 103', location: 'Cabinet A3', quantity: 200 },
+      { sl: 9, name: 'Screwdriver Set', part: 'SDV-SET-009', spec: '8 pieces, Magnetic', category: 'Tools', store: 'LHC 103', location: 'Extra Box', quantity: 6 },
     ];
 
     function showLoginModal() {
@@ -582,21 +592,25 @@
 
     function performSearch() {
       const query = document.getElementById('searchInput').value.toLowerCase().trim();
-      if (!query) {
-        showToast('❌ Please enter search term', 'Type part#, name, or specification', 'error');
+      const locationFilter = document.getElementById('locationFilter').value;
+
+      if (!query && !locationFilter) {
+        showToast('❌ Please enter search term or select location', '', 'error');
         return;
       }
 
-      const results = allItems.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        item.part.toLowerCase().includes(query) ||
-        item.spec.toLowerCase().includes(query)
-      );
+      const results = allItems.filter(item => {
+        const matchesQuery = !query || item.name.toLowerCase().includes(query) ||
+          item.part.toLowerCase().includes(query) ||
+          item.spec.toLowerCase().includes(query);
+        const matchesLocation = !locationFilter || item.location === locationFilter;
+        return matchesQuery && matchesLocation;
+      });
 
       const tbody = document.getElementById('searchResults');
       tbody.innerHTML = results.length ? results.map(item =>
-        `<tr><td>${item.sl}</td><td>${item.name}</td><td>${item.part}</td><td>${item.spec}</td><td>${item.category}</td><td>${item.store}</td><td>${item.quantity}</td></tr>`
-      ).join('') : '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted)">No items found matching your search</td></tr>';
+        `<tr><td>${item.sl}</td><td>${item.name}</td><td>${item.part}</td><td>${item.spec}</td><td>${item.category}</td><td>${item.store}</td><td>${item.location}</td><td>${item.quantity}</td></tr>`
+      ).join('') : `<tr><td colspan="8" style="text-align:center; padding:20px; color:var(--muted)">No items found ${query ? 'matching "' + query + '"' : ''} ${locationFilter ? 'in ' + locationFilter : ''}</td></tr>`;
     }
 
     function viewStoreInventory() {
