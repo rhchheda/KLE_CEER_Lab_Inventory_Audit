@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KLE Inventory Lookup · Student Portal</title>
+  <meta name="description" content="Check inventory availability across KLE laboratory facilities." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0d1b3e;
+      --navy-2: #182b55;
+      --gold: #c9a84c;
+      --gold-2: #ead282;
+      --ink: #13203c;
+      --muted: #68758f;
+      --line: rgba(13, 27, 62, 0.12);
+      --paper: #ffffff;
+      --soft: #f5f1e8;
+      --wash: #eef3f8;
+      --green: #1f7a4d;
+      --red: #c24035;
+      --blue: #226da8;
+      --shadow: 0 18px 45px rgba(13, 27, 62, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Outfit, system-ui, sans-serif;
+      color: var(--ink);
+      background: var(--soft);
+      min-height: 100vh;
+      padding-bottom: 60px;
+    }
+    button, input { font: inherit; cursor: pointer; }
+
+    .loading {
+      position: fixed; inset: 0; z-index: 60; display: grid; place-items: center;
+      background: var(--navy); color: white;
+    }
+    .loading.hidden { display: none; }
+    .loading-box { text-align: center; }
+    .loading-logo { font-family: "Cormorant Garamond", serif; font-size: 40px; font-weight: 600; }
+    .loading-logo span { color: var(--gold); font-style: italic; }
+    .loading-text { margin-top: 12px; color: rgba(255,255,255,0.55); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .loading-rings { position: relative; width: 86px; height: 86px; margin: 0 auto 18px; }
+    .loading-rings::before, .loading-rings::after {
+      content: ""; position: absolute; inset: 0; border-radius: 50%;
+      border: 2px solid transparent; border-top-color: var(--gold);
+      border-right-color: rgba(234,210,130,0.55); animation: spin 1.4s linear infinite;
+    }
+    .loading-rings::after {
+      inset: 12px; border-top-color: rgba(255,255,255,0.72);
+      animation-duration: 1.9s; animation-direction: reverse;
+    }
+    .loading-dot {
+      position: absolute; inset: 31px; border-radius: 50%;
+      background: var(--gold); box-shadow: 0 0 26px rgba(201,168,76,0.65);
+      animation: pulse 1.25s ease-in-out infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%, 100% { transform: scale(0.78); opacity: 0.65; } 50% { transform: scale(1); opacity: 1; } }
+
+    .login-screen {
+      position: fixed; inset: 0; z-index: 50; display: none; place-items: center;
+      background: linear-gradient(135deg, rgba(13,27,62,0.96), rgba(24,43,85,0.92)), radial-gradient(circle at 20% 20%, rgba(201,168,76,0.18), transparent 30%);
+      color: white; padding: 20px;
+    }
+    .login-screen.show { display: grid; }
+    .login-card {
+      width: min(440px, 100%);
+      border: 1px solid rgba(201,168,76,0.32); border-radius: 10px;
+      background: rgba(255,255,255,0.08); box-shadow: 0 28px 70px rgba(0,0,0,0.24);
+      padding: 40px; backdrop-filter: blur(14px);
+    }
+    .login-title { font-family: "Cormorant Garamond", serif; font-size: 34px; line-height: 1.05; }
+    .login-title span { color: var(--gold-2); font-style: italic; }
+    .login-copy { color: rgba(255,255,255,0.62); margin: 10px 0 24px; line-height: 1.55; font-size: 13.5px; }
+    .login-card .field { width: 100%; background: rgba(255,255,255,0.95); }
+    .login-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 18px; }
+    .login-error { color: #ffb8b8; min-height: 18px; font-size: 13px; }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      background: rgba(13, 27, 62, 0.96); color: white;
+      border-bottom: 1px solid rgba(201,168,76,0.24); backdrop-filter: blur(10px);
+    }
+    .topbar-inner {
+      max-width: 1240px; margin: 0 auto; padding: 11px 18px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 210px; }
+    .brand-name { font-size: 17px; font-weight: 700; }
+    .mark { width: 54px; height: 54px; border: 1px solid rgba(201,168,76,0.7); display: grid; place-items: center; color: var(--gold-2); font-family: "Cormorant Garamond", serif; font-size: 26px; font-weight: 600; border-radius: 9px; overflow: hidden; flex: none; }
+    .brand-sub { color: rgba(255,255,255,0.5); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+    .mode { display: flex; align-items: center; gap: 12px; }
+    .mode button { border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); min-height: 34px; border-radius: 8px; padding: 7px 14px; font-size: 13px; }
+    .mode button.login-btn { background: var(--gold); color: var(--navy); border-color: var(--gold); font-weight: 700; transition: all 0.2s; }
+    .mode button.login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(201,168,76,0.3); }
+
+    .hero {
+      background: linear-gradient(90deg, rgba(13,27,62,0.97) 0%, rgba(13,27,62,0.88) 42%, rgba(24,43,85,0.7) 100%), var(--navy);
+      color: white; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ""; position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(201,168,76,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(201,168,76,0.07) 1px, transparent 1px);
+      background-size: 48px 48px; mix-blend-mode: screen; opacity: 0.7;
+    }
+    .hero-inner {
+      position: relative; max-width: 1240px; margin: 0 auto; padding: 40px 18px 30px;
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 350px); gap: 28px; align-items: center;
+    }
+    .eyebrow { color: var(--gold-2); letter-spacing: 0.14em; text-transform: uppercase; font-size: 11.5px; font-weight: 700; }
+    h1 { font-family: "Cormorant Garamond", serif; font-size: clamp(34px, 5.6vw, 62px); line-height: 0.98; margin: 10px 0; max-width: 780px; }
+    h1 em { color: var(--gold-2); font-style: italic; }
+    .hero-copy { color: rgba(255,255,255,0.66); max-width: 660px; line-height: 1.6; font-size: 14.5px; }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .hero-pill { display: inline-flex; align-items: center; min-height: 28px; border: 1px solid rgba(234,210,130,0.3); border-radius: 999px; padding: 6px 11px; color: rgba(255,255,255,0.76); background: rgba(255,255,255,0.05); font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; }
+
+    main { max-width: 1240px; margin: 0 auto; padding: 20px 18px 56px; }
+
+    .kpis {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px; margin-bottom: 18px;
+    }
+    .kpi {
+      border: 1px solid var(--line); background: var(--paper); border-radius: 8px;
+      padding: 18px; box-shadow: 0 10px 26px rgba(13,27,62,0.07);
+      text-align: left; position: relative; overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      animation: riseIn 0.45s ease both;
+    }
+    .kpi::before {
+      content: ""; position: absolute; inset: 0 0 auto 0; height: 4px;
+      background: var(--gold);
+    }
+    .kpi::after {
+      content: ""; position: absolute; width: 88px; height: 88px;
+      right: -40px; bottom: -42px; border-radius: 50%;
+      background: rgba(201,168,76,0.15);
+    }
+    @keyframes riseIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .kpi { cursor: pointer; }
+    .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow); background: #fffdf6; }
+    .kpi-label { color: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; }
+    .kpi-value { font-family: "Cormorant Garamond", serif; font-size: 40px; line-height: 1; margin-top: 8px; color: var(--navy); }
+    .kpi-sub { color: var(--muted); font-size: 11.5px; margin-top: 5px; line-height: 1.35; }
+
+    .section-band {
+      background: var(--paper); border: 1px solid var(--line);
+      border-radius: 8px; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px;
+    }
+    .section-head {
+      padding: 17px 18px; border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #fbfaf7);
+    }
+    .section-title { font-size: 19px; font-weight: 700; color: var(--navy); }
+    .section-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+    /* CAROUSEL */
+    .gallery-band {
+      background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+      box-shadow: var(--shadow); overflow: hidden; margin-bottom: 18px;
+    }
+    .gallery-head {
+      padding: 15px 18px; display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #fbfaf7);
+    }
+    .gallery-nav { display: flex; gap: 6px; }
+    .gallery-nav button { min-width: 38px; font-size: 15px; line-height: 1; border: 1px solid var(--line); background: white; border-radius: 6px; padding: 6px 10px; }
+    .gallery-nav button:hover { border-color: var(--gold); }
+    .gallery {
+      display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory;
+      scrollbar-width: none; background: var(--navy);
+    }
+    .gallery::-webkit-scrollbar { display: none; }
+    .slide {
+      position: relative; flex: 0 0 100%; margin: 0; scroll-snap-align: center;
+      aspect-ratio: 21 / 9; min-height: 220px; max-height: 420px;
+      background: var(--navy-2); overflow: hidden;
+    }
+    .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .slide figcaption {
+      position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 18px 14px;
+      color: #fff; font-size: 13.5px; line-height: 1.45;
+      background: linear-gradient(180deg, rgba(13,27,62,0) 0%, rgba(13,27,62,0.82) 62%);
+    }
+    .slide .index {
+      position: absolute; top: 12px; right: 14px; padding: 4px 9px; border-radius: 999px;
+      background: rgba(13,27,62,0.66); border: 1px solid rgba(234,210,130,0.4);
+      color: var(--gold-2); font-size: 11px; font-weight: 700;
+      font-family: "JetBrains Mono", monospace;
+    }
+    .gallery-dots {
+      display: flex; justify-content: center; gap: 7px; padding: 12px;
+      background: #fbfcfd; border-top: 1px solid var(--line);
+    }
+    .gallery-dots button {
+      width: 9px; height: 9px; padding: 0; border-radius: 50%; border: 0;
+      background: rgba(13,27,62,0.22); transition: background 0.2s ease, transform 0.2s ease;
+    }
+    .gallery-dots button[aria-current="true"] { background: var(--gold); transform: scale(1.45); }
+
+    .toolbar {
+      padding: 13px 18px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      border-bottom: 1px solid var(--line); background: #fbfcfd;
+    }
+    .field {
+      border: 1px solid var(--line); background: white; border-radius: 8px;
+      padding: 9px 11px; min-height: 38px; color: var(--ink); flex: 1; min-width: 180px;
+    }
+    .field:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 11px 13px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; background: #f7f9fb; font-weight: 700; }
+    tbody tr:hover { background: #fbfcfd; }
+    .table-scroll { max-height: 62vh; overflow: auto; }
+    .badge { display: inline-flex; border-radius: 999px; padding: 4px 9px; min-height: 23px; font-size: 10.5px; font-weight: 700; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-available { background: #edf5ef; color: var(--green); }
+    .badge-limited { background: #fff6df; color: var(--muted); }
+
+    .toast-wrap {
+      position: fixed; right: 16px; bottom: 70px; z-index: 80;
+      display: grid; gap: 10px; width: min(380px, calc(100vw - 32px));
+    }
+    .toast {
+      border-radius: 8px; border: 1px solid rgba(13,27,62,0.12); background: white;
+      box-shadow: var(--shadow); padding: 12px 14px; display: grid; gap: 3px;
+      animation: toastIn 0.25s ease both;
+    }
+    .toast-title { font-weight: 800; color: var(--navy); font-size: 13px; }
+    .toast-body { color: var(--muted); font-size: 13px; line-height: 1.4; }
+    .toast.error { border-left: 4px solid var(--red); }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .footer {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; height: 55px;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      background: var(--navy); color: rgba(255,255,255,0.68);
+      border-top: 1px solid rgba(201,168,76,0.24); font-size: 12px;
+      padding: 0 12px; text-align: center; flex-wrap: wrap;
+    }
+    .heart {
+      color: #ff2f45; font-size: 0.95em; display: inline-block;
+      animation: heartbeat 1.05s ease-in-out infinite; transform-origin: center;
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      16% { transform: scale(1.28); }
+      30% { transform: scale(0.94); }
+      44% { transform: scale(1.18); }
+      60% { transform: scale(1); }
+    }
+    .footer .sep { opacity: 0.35; }
+    #footerUpdated { color: var(--gold-2); font-family: "JetBrains Mono", monospace; font-size: 11px; }
+
+    @media (max-width: 720px) {
+      .topbar-inner { flex-direction: column; align-items: flex-start; }
+      .kpis { grid-template-columns: repeat(2, 1fr); }
+      .hero-inner { grid-template-columns: 1fr; }
+      table { min-width: 720px; }
+      .table-scroll { overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="loading" id="loading">
+    <div class="loading-box">
+      <div class="loading-rings"><div class="loading-dot"></div></div>
+      <div class="loading-logo">KLE <span>Inventory</span></div>
+      <div class="loading-text">Loading item database</div>
+    </div>
+  </div>
+
+  <section class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-title">Lab <span>Manager</span></div>
+      <div class="login-copy">Sign in to manage inventory, add items, and generate reports.</div>
+      <input class="field" id="loginEmail" type="email" placeholder="user@kletech.ac.in" autocomplete="email" />
+      <input class="field" id="loginPassword" type="password" placeholder="••••••••" autocomplete="current-password" style="margin-top:12px" />
+      <div class="login-actions">
+        <div class="login-error" id="loginError"></div>
+        <div style="display:flex;gap:8px">
+          <button class="field" style="border:1px solid var(--line); background:white; color:var(--navy)" id="loginCancel" type="button">Back</button>
+          <button style="border:1px solid var(--gold); background:var(--gold); color:var(--navy); border-radius:8px; padding:10px 14px; font-weight:700" id="loginSubmit" type="button">Sign in</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="mark">🎓</div>
+        <div>
+          <div class="brand-name">KLE Inventory</div>
+          <div class="brand-sub">Item Lookup & Search</div>
+        </div>
+      </div>
+      <div class="mode">
+        <span style="color: rgba(255,255,255,0.6); font-size: 12px;">📚 Lab Portal · KLE-C-SHInE</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">KLE-C-SHInE, Hubballi · Project Clinic</div>
+        <h1>Inventory <em>Lookup</em></h1>
+        <div class="hero-copy">
+          Check what items are available across KLE laboratory facilities. Search by part number, item name, or specification. Browse by store or category to find what you need.
+        </div>
+        <div class="hero-pills">
+          <span class="hero-pill">🔍 Search items</span>
+          <span class="hero-pill">🏢 Browse by store</span>
+          <span class="hero-pill">📦 Filter by category</span>
+        </div>
+      </div>
+      <div style="border:1px solid rgba(201,168,76,0.3); padding:18px; border-radius:10px; background: linear-gradient(160deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04)); box-shadow: 0 18px 46px rgba(0,0,0,0.18)">
+        <div style="color:rgba(255,255,255,0.5); font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase">Database Status</div>
+        <div style="margin-top:6px; color:var(--gold-2); font-family:'JetBrains Mono',monospace; font-size:12px"><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#37d47e; margin-right:7px; vertical-align:1px; box-shadow:0 0 0 3px rgba(55,212,126,0.22)"></span>Active</div>
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.12); color:rgba(255,255,255,0.68); font-size:12px; line-height:1.5">
+          <b>Total Stores:</b> 3<br/>
+          <b>Total Items:</b> 290<br/>
+          <b>Last Updated:</b> 18-Aug-2026
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <!-- CAROUSEL: LAB GALLERIES -->
+    <section class="gallery-band" id="galleryBand">
+      <div class="gallery-head">
+        <div>
+          <div class="section-title">📷 Laboratory Facilities</div>
+          <div class="section-sub">RH Kulkarni Building, BVBCET Campus, Vidyanagar</div>
+        </div>
+        <div class="gallery-nav">
+          <button class="ghost" id="galPrev" type="button" onclick="prevSlide()">&#8592;</button>
+          <button class="ghost" id="galNext" type="button" onclick="nextSlide()">&#8594;</button>
+        </div>
+      </div>
+      <div class="gallery" id="galleryTrack">
+        <div class="slide">
+          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+103+-+Ground+Floor" alt="LHC 103 - Ground Floor" />
+          <figcaption>
+            <strong>LHC 103 - Ground Floor</strong><br/>
+            Electronics, Robotics & Mixed Lab Equipment
+          </figcaption>
+          <div class="index">1/3</div>
+        </div>
+        <div class="slide">
+          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+203+-+Second+Floor" alt="LHC 203 - Second Floor" />
+          <figcaption>
+            <strong>LHC 203 - Second Floor</strong><br/>
+            Advanced Electronics, Sensors & Control Systems
+          </figcaption>
+          <div class="index">2/3</div>
+        </div>
+        <div class="slide">
+          <img src="https://via.placeholder.com/1400x600/0d1b3e/c9a84c?text=LHC+303+-+Third+Floor" alt="LHC 303 - Third Floor" />
+          <figcaption>
+            <strong>LHC 303 - Third Floor</strong><br/>
+            Robotics, Assembly & Integration Lab
+          </figcaption>
+          <div class="index">3/3</div>
+        </div>
+      </div>
+      <div class="gallery-dots" id="galleryDots">
+        <button aria-current="true" onclick="goToSlide(0)"></button>
+        <button onclick="goToSlide(1)"></button>
+        <button onclick="goToSlide(2)"></button>
+      </div>
+    </section>
+
+    <!-- KPI TILES - CATEGORY WISE & STORE WISE (CLICKABLE) -->
+    <div class="kpis" id="publicKpis">
+      <div class="kpi" onclick="viewAllStores()">
+        <div class="kpi-label">🏢 Total Stores</div>
+        <div class="kpi-value">3</div>
+        <div class="kpi-sub">Click to browse all</div>
+      </div>
+      <div class="kpi" onclick="searchAllItems()">
+        <div class="kpi-label">📦 Total Items</div>
+        <div class="kpi-value">290</div>
+        <div class="kpi-sub">Click to search</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Electronics')">
+        <div class="kpi-label">⚡ Electronics</div>
+        <div class="kpi-value">45</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Mechanical')">
+        <div class="kpi-label">⚙️ Mechanical</div>
+        <div class="kpi-value">38</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Consumable')">
+        <div class="kpi-label">📦 Consumable</div>
+        <div class="kpi-value">52</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Assembly/Kit')">
+        <div class="kpi-label">🤖 Assembly</div>
+        <div class="kpi-value">28</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Hardware')">
+        <div class="kpi-label">🔧 Hardware</div>
+        <div class="kpi-value">85</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+      <div class="kpi" onclick="filterByCategory('Tools')">
+        <div class="kpi-label">🛠️ Tools</div>
+        <div class="kpi-value">42</div>
+        <div class="kpi-sub">Click to view</div>
+      </div>
+    </div>
+
+    <!-- SEARCH SECTION -->
+    <section class="section-band">
+      <div class="section-head">
+        <div class="section-title">🔍 Search Inventory</div>
+        <div class="section-sub">Find items by part number, name, or specification across all stores</div>
+      </div>
+      <div class="toolbar">
+        <input class="field" id="searchInput" placeholder="Search by Part#, Item Name, or Specification..." />
+        <button style="border:1px solid var(--gold); background:var(--gold); color:var(--navy); border-radius:8px; padding:9px 16px; font-weight:600" onclick="performSearch()">Search</button>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>SL No</th>
+              <th>Item Name</th>
+              <th>Part #</th>
+              <th>Specification</th>
+              <th>Category</th>
+              <th>Store</th>
+              <th>Total Stock</th>
+            </tr>
+          </thead>
+          <tbody id="searchResults">
+            <tr><td colspan="7" style="text-align:center; padding:40px; color:var(--muted)">Enter search query to find items</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- BROWSE BY STORE -->
+    <section class="section-band">
+      <div class="section-head">
+        <div class="section-title">🏢 Browse by Store</div>
+        <div class="section-sub">Select a store to view all available items</div>
+      </div>
+      <div class="toolbar">
+        <select class="field" id="storeSelect" onchange="viewStoreInventory()">
+          <option value="">-- Select Store --</option>
+          <option value="LHC 103">LHC 103 - Ground Floor</option>
+          <option value="LHC 203">LHC 203 - Second Floor</option>
+          <option value="LHC 303">LHC 303 - Third Floor</option>
+        </select>
+      </div>
+      <div class="table-scroll" id="storeTable" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th>SL No</th>
+              <th>Item Name</th>
+              <th>Category</th>
+              <th>Specification</th>
+              <th>Total Stock</th>
+            </tr>
+          </thead>
+          <tbody id="storeResults"></tbody>
+        </table>
+      </div>
+      <div id="storeEmptyMsg" style="padding:40px; text-align:center; color:var(--muted)">Select a store to view inventory</div>
+    </section>
+
+    <!-- BROWSE BY CATEGORY -->
+    <section class="section-band">
+      <div class="section-head">
+        <div class="section-title">📦 Browse by Category</div>
+        <div class="section-sub">Select category and store to view items</div>
+      </div>
+      <div class="toolbar">
+        <select class="field" id="categorySelect">
+          <option value="">-- Select Category --</option>
+          <option value="Electronics">⚡ Electronics</option>
+          <option value="Mechanical">⚙️ Mechanical</option>
+          <option value="Consumable">📦 Consumable</option>
+          <option value="Assembly/Kit">🤖 Assembly/Kit</option>
+          <option value="Hardware">🔧 Hardware</option>
+          <option value="Tools">🛠️ Tools</option>
+        </select>
+        <select class="field" id="categoryStoreSelect">
+          <option value="">-- All Floors --</option>
+          <option value="LHC 103">LHC 103 - Ground Floor</option>
+          <option value="LHC 203">LHC 203 - Second Floor</option>
+          <option value="LHC 303">LHC 303 - Third Floor</option>
+        </select>
+        <button style="border:1px solid var(--gold); background:var(--gold); color:var(--navy); border-radius:8px; padding:9px 16px; font-weight:600" onclick="viewCategoryInventory()">View</button>
+      </div>
+      <div class="table-scroll" id="categoryTable" style="display:none">
+        <table>
+          <thead>
+            <tr>
+              <th>SL No</th>
+              <th>Item Name</th>
+              <th>Specification</th>
+              <th>Store</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+          <tbody id="categoryResults"></tbody>
+        </table>
+      </div>
+      <div id="categoryEmptyMsg" style="padding:40px; text-align:center; color:var(--muted)">Select category to view items</div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>Made with</span>
+    <span class="heart">❤</span>
+    <span>~rhc</span>
+    <span class="sep">·</span>
+    <span>Project Clinic, KLE-C-SHInE</span>
+    <span class="sep">·</span>
+    <span>Last updated <span id="footerUpdated">18-Aug-2026</span></span>
+  </footer>
+
+  <div class="toast-wrap" id="toastWrap" aria-live="polite"></div>
+
+  <script>
+    // Mock data
+    const allItems = [
+      { sl: 1, name: 'Stepper Motor NEMA17', part: 'STM-N17-001', spec: '17Nm Holding Torque, 1.6A Current', category: 'Electronics', store: 'LHC 203', quantity: 28 },
+      { sl: 2, name: 'DC Motor 12V', part: 'DCM-12V-002', spec: '100RPM, 300mA', category: 'Electronics', store: 'LHC 203', quantity: 12 },
+      { sl: 3, name: 'Servo Motor MG996R', part: 'SRV-MG996-003', spec: '4.8-6V, 55g', category: 'Electronics', store: 'LHC 303', quantity: 15 },
+      { sl: 4, name: 'Gear Set 20T', part: 'GR-20T-004', spec: 'Spur Gears, Plastic', category: 'Mechanical', store: 'LHC 303', quantity: 32 },
+      { sl: 5, name: 'Breadboard MB-102', part: 'BB-MB102-005', spec: '830 Contacts, 165x55mm', category: 'Hardware', store: 'LHC 203', quantity: 85 },
+      { sl: 6, name: 'Jumper Wires Set', part: 'JMP-SET-006', spec: 'M-M, M-F, F-F, 40pcs', category: 'Consumable', store: 'LHC 103', quantity: 48 },
+      { sl: 7, name: 'Two-Wheel Bot Kit', part: 'KIT-2WHL-007', spec: 'Complete assembly package', category: 'Assembly/Kit', store: 'LHC 303', quantity: 18 },
+      { sl: 8, name: 'Bolt M3x10', part: 'BLT-M3-008', spec: 'Stainless Steel, 10mm', category: 'Hardware', store: 'LHC 103', quantity: 200 },
+      { sl: 9, name: 'Screwdriver Set', part: 'SDV-SET-009', spec: '8 pieces, Magnetic', category: 'Tools', store: 'LHC 103', quantity: 6 },
+    ];
+
+    function showLoginModal() {
+      document.getElementById('loginScreen').classList.add('show');
+      document.getElementById('loginEmail').focus();
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginScreen').classList.remove('show');
+    }
+
+    document.getElementById('loginCancel').addEventListener('click', closeLoginModal);
+    document.getElementById('loginSubmit').addEventListener('click', () => {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) {
+        document.getElementById('loginError').textContent = 'Please enter email and password.';
+        return;
+      }
+      showToast('✓ Login successful!', 'Redirecting to manager panel...', 'success');
+      setTimeout(() => closeLoginModal(), 1000);
+    });
+
+    function performSearch() {
+      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      if (!query) {
+        showToast('❌ Please enter search term', 'Type part#, name, or specification', 'error');
+        return;
+      }
+
+      const results = allItems.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.part.toLowerCase().includes(query) ||
+        item.spec.toLowerCase().includes(query)
+      );
+
+      const tbody = document.getElementById('searchResults');
+      tbody.innerHTML = results.length ? results.map(item =>
+        `<tr><td>${item.sl}</td><td>${item.name}</td><td>${item.part}</td><td>${item.spec}</td><td>${item.category}</td><td>${item.store}</td><td>${item.quantity}</td></tr>`
+      ).join('') : '<tr><td colspan="7" style="text-align:center; padding:20px; color:var(--muted)">No items found matching your search</td></tr>';
+    }
+
+    function viewStoreInventory() {
+      const store = document.getElementById('storeSelect').value;
+      if (!store) {
+        document.getElementById('storeTable').style.display = 'none';
+        document.getElementById('storeEmptyMsg').style.display = 'block';
+        return;
+      }
+
+      const results = allItems.filter(item => item.store === store);
+      const tbody = document.getElementById('storeResults');
+      tbody.innerHTML = results.map(item =>
+        `<tr><td>${item.sl}</td><td>${item.name}</td><td>${item.category}</td><td>${item.spec}</td><td><strong>${item.quantity}</strong></td></tr>`
+      ).join('');
+
+      document.getElementById('storeTable').style.display = 'block';
+      document.getElementById('storeEmptyMsg').style.display = 'none';
+    }
+
+    function viewCategoryInventory() {
+      const category = document.getElementById('categorySelect').value;
+      const store = document.getElementById('categoryStoreSelect').value;
+
+      if (!category) {
+        showToast('❌ Please select category', '', 'error');
+        return;
+      }
+
+      const results = allItems.filter(item =>
+        item.category === category && (!store || item.store === store)
+      );
+
+      const tbody = document.getElementById('categoryResults');
+      tbody.innerHTML = results.length ? results.map(item =>
+        `<tr><td>${item.sl}</td><td>${item.name}</td><td>${item.spec}</td><td>${item.store}</td><td><strong>${item.quantity}</strong></td></tr>`
+      ).join('') : '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--muted)">No items in this category</td></tr>';
+
+      document.getElementById('categoryTable').style.display = 'block';
+      document.getElementById('categoryEmptyMsg').style.display = 'none';
+    }
+
+    function showToast(title, body, type) {
+      const el = document.createElement("div");
+      el.className = "toast " + (type || "info");
+      el.innerHTML = '<div class="toast-title">' + escapeHtml(title) + "</div>" +
+        (body ? '<div class="toast-body">' + escapeHtml(body) + "</div>" : "");
+      document.getElementById("toastWrap").appendChild(el);
+      setTimeout(() => el.remove(), type === "error" ? 7000 : 4600);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.getElementById('loading').classList.add('hidden');
+      }, 600);
+    });
+
+    document.getElementById('loginPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('loginSubmit').click();
+      }
+    });
+
+    // ACTIONABLE KPIs
+    function searchAllItems() {
+      document.getElementById('searchInput').focus();
+      document.getElementById('searchInput').scrollIntoView({ behavior: 'smooth' });
+      showToast('💡 Search Tip', 'Enter part#, name, or specification', 'success');
+    }
+
+    function viewAllStores() {
+      document.getElementById('storeSelect').focus();
+      document.getElementById('storeSelect').scrollIntoView({ behavior: 'smooth' });
+      showToast('💡 Browse Stores', 'Select a store to see all items', 'success');
+    }
+
+    function filterByCategory(category) {
+      document.getElementById('categorySelect').value = category;
+      document.getElementById('categoryStoreSelect').value = ''; // All stores
+      viewCategoryInventory();
+      document.getElementById('categoryTable').scrollIntoView({ behavior: 'smooth' });
+      showToast('✓ Filtered', `Showing ${category} items across all floors`, 'success');
+    }
+
+    // CAROUSEL NAVIGATION
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.gallery-dots button');
+    const gallery = document.getElementById('galleryTrack');
+
+    function goToSlide(n) {
+      currentSlide = n;
+      gallery.scrollLeft = gallery.offsetWidth * currentSlide;
+      dots.forEach((dot, i) => {
+        dot.setAttribute('aria-current', i === currentSlide ? 'true' : 'false');
+      });
+    }
+
+    function nextSlide() {
+      currentSlide = (currentSlide + 1) % slides.length;
+      goToSlide(currentSlide);
+    }
+
+    function prevSlide() {
+      currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+      goToSlide(currentSlide);
+    }
+
+    // Keyboard navigation for carousel
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') prevSlide();
+      if (e.key === 'ArrowRight') nextSlide();
+    });
+  </script>
+
+</body>
+</html>
