@@ -94,7 +94,12 @@
     }
     .brand { display: flex; align-items: center; gap: 14px; min-width: 210px; }
     .brand-name { font-size: 17px; font-weight: 700; }
-    .mark { width: 80px; height: 80px; border: 1px solid rgba(201,168,76,0.7); display: grid; place-items: center; color: var(--gold-2); font-family: "Cormorant Garamond", serif; font-size: 26px; font-weight: 600; border-radius: 9px; overflow: hidden; flex: none; }
+    .mark { width: 62px; height: 62px; border: 1px solid rgba(201,168,76,0.7); display: grid; place-items: center; color: var(--gold-2); font-family: "Cormorant Garamond", serif; font-size: 26px; font-weight: 600; border-radius: 9px; overflow: hidden; flex: none; }
+    .mark img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .mark.has-logo { background: #ffffff; border-color: rgba(255,255,255,0.42); padding: 5px; box-shadow: 0 3px 12px rgba(0,0,0,0.22); }
+    /* Wide horizontal logo (e.g. 291x73) gets a wide plate instead of a cramped square. */
+    .mark.wide { width: auto; height: 56px; max-width: 230px; padding: 6px 12px; border-radius: 8px; }
+    .mark.wide img { width: auto; height: 100%; max-width: 210px; }
     .brand-sub { color: rgba(255,255,255,0.5); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
     .mode { display: flex; align-items: center; gap: 12px; }
     .mode button { border: 1px solid rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.82); min-height: 34px; border-radius: 8px; padding: 7px 14px; font-size: 13px; }
@@ -303,7 +308,12 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand">
-        <div class="mark"><img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/KLE_Logo.png" alt="KLE" style="width: 100%; height: 100%; object-fit: contain;" /></div>
+        <div class="mark" id="brandMark">
+          <img id="brandLogo" src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/KLE_Logo.png" alt="KLE Technological University"
+               onload="var m=document.getElementById('brandMark');m.classList.add('has-logo');if(this.naturalWidth/Math.max(1,this.naturalHeight)>1.6)m.classList.add('wide');"
+               onerror="this.remove()" />
+          <span>KLE</span>
+        </div>
         <div>
           <div class="brand-name">KLE Inventory</div>
           <div class="brand-sub">Item Lookup & Search</div>
@@ -316,7 +326,7 @@
   </header>
 
   <!-- CAROUSEL: LAB IMAGES (Background) + HERO TITLE OVERLAY -->
-  <section class="hero" style="position: relative; overflow: hidden; min-height: 600px; display: flex; align-items: center; background: var(--navy);">
+  <section class="hero" style="position: relative; overflow: hidden; min-height: 440px; display: flex; align-items: center; background: var(--navy);">
     <!-- Carousel Background -->
     <div class="gallery" id="galleryTrack" style="position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: flex; overflow: hidden;">
       <div class="slide" style="background: linear-gradient(135deg, #1a3a52, #0d1b3e);">
@@ -838,9 +848,15 @@
       gallery.style.transition = 'transform 0.6s ease-in-out';
       gallery.style.overflow = 'hidden';
       gallery.querySelectorAll('.slide').forEach(slide => {
+        // Override old scrolling-gallery constraints so each slide fills the hero
         slide.style.flex = '0 0 100%';
         slide.style.width = '100%';
         slide.style.height = '100%';
+        slide.style.minHeight = '0';
+        slide.style.maxHeight = 'none';
+        slide.style.aspectRatio = 'auto';
+        const img = slide.querySelector('img');
+        if(img) { img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; }
       });
 
       console.log('✓ Carousel initialized:', slides.length, 'slides');
