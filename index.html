@@ -588,16 +588,19 @@
     ];
 
     // ============= API WRAPPER FUNCTIONS =============
-    async function callGAS(action, params = {}) {
-      try {
-        const qs = new URLSearchParams({ action, ...params });
-        const response = await fetch(GAS_URL + '?' + qs.toString());
-        const data = await response.json();
-        return data;
-      } catch(err) {
-        console.error('GAS API Error:', err);
-        return { success: false, error: err.toString() };
-      }
+    // JSONP: GAS can't send CORS headers, so we load its response via a <script> tag.
+    function callGAS(action, params = {}) {
+      return new Promise((resolve) => {
+        const cb = 'gas_cb_' + Math.random().toString(36).slice(2);
+        const script = document.createElement('script');
+        const timer = setTimeout(() => { cleanup(); resolve({ success: false, error: 'timeout' }); }, 20000);
+        function cleanup() { clearTimeout(timer); delete window[cb]; if(script.parentNode) script.remove(); }
+        window[cb] = (data) => { cleanup(); resolve(data); };
+        const qs = new URLSearchParams({ action, callback: cb, ...params });
+        script.src = GAS_URL + '?' + qs.toString();
+        script.onerror = () => { cleanup(); resolve({ success: false, error: 'network error' }); };
+        document.body.appendChild(script);
+      });
     }
 
     async function loadInventoryData() {
@@ -675,14 +678,15 @@
       const hardware = allItems.filter(i => i.category === 'Hardware').length;
       const tools = allItems.filter(i => i.category === 'Tools').length;
 
-      document.getElementById('kpiStores').textContent = stores;
-      document.getElementById('kpiItems').textContent = items;
-      document.getElementById('kpiElectronics').textContent = electronics;
-      document.getElementById('kpiMechanical').textContent = mechanical;
-      document.getElementById('kpiConsumable').textContent = consumable;
-      document.getElementById('kpiKit').textContent = kit;
-      document.getElementById('kpiHardware').textContent = hardware;
-      document.getElementById('kpiTools').textContent = tools;
+      const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+      setText('kpiStores', stores);
+      setText('kpiItems', items);
+      setText('kpiElectronics', electronics);
+      setText('kpiMechanical', mechanical);
+      setText('kpiConsumable', consumable);
+      setText('kpiKit', kit);
+      setText('kpiHardware', hardware);
+      setText('kpiTools', tools);
     }
 
     function loadMockData() {
