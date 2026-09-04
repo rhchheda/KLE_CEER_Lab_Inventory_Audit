@@ -536,16 +536,19 @@
     const GAS_URL = 'https://script.google.com/macros/s/AKfycbwuQxbueL0kFr0mZZz04AbMavAjIbcK32SA714zdbnxfD2nsIzVqpQDewY7HcVqEI54kw/exec';
 
     // ============= API WRAPPER FUNCTIONS =============
-    async function callGAS(action, params = {}) {
-      try {
-        const qs = new URLSearchParams({ action, ...params });
-        const response = await fetch(GAS_URL + '?' + qs.toString());
-        const data = await response.json();
-        return data;
-      } catch(err) {
-        console.error('GAS API Error:', err);
-        return { success: false, error: err.toString() };
-      }
+    // JSONP: GAS can't send CORS headers, so we load its response via a <script> tag.
+    function callGAS(action, params = {}) {
+      return new Promise((resolve) => {
+        const cb = 'gas_cb_' + Math.random().toString(36).slice(2);
+        const script = document.createElement('script');
+        const timer = setTimeout(() => { cleanup(); resolve({ success: false, error: 'timeout' }); }, 20000);
+        function cleanup() { clearTimeout(timer); delete window[cb]; if(script.parentNode) script.remove(); }
+        window[cb] = (data) => { cleanup(); resolve(data); };
+        const qs = new URLSearchParams({ action, callback: cb, ...params });
+        script.src = GAS_URL + '?' + qs.toString();
+        script.onerror = () => { cleanup(); resolve({ success: false, error: 'network error' }); };
+        document.body.appendChild(script);
+      });
     }
 
     async function performLoginWithGAS(email, password) {
