@@ -843,29 +843,32 @@
       slides = gallery.querySelectorAll('.slide');
       dots = document.querySelectorAll('#galleryDots button');
 
-      // Setup gallery as flexbox
-      gallery.style.display = 'flex';
-      gallery.style.transition = 'transform 0.6s ease-in-out';
-      gallery.style.overflow = 'hidden';
-      gallery.querySelectorAll('.slide').forEach(slide => {
-        // Override old scrolling-gallery constraints so each slide fills the hero
-        slide.style.flex = '0 0 100%';
+      // Crossfade carousel: stack all slides on top of each other, fade the active one in.
+      gallery.style.display = 'block';
+      gallery.style.transform = 'none';
+      slides.forEach((slide, i) => {
+        slide.style.position = 'absolute';
+        slide.style.inset = '0';
         slide.style.width = '100%';
         slide.style.height = '100%';
         slide.style.minHeight = '0';
         slide.style.maxHeight = 'none';
         slide.style.aspectRatio = 'auto';
+        slide.style.opacity = i === 0 ? '1' : '0';
+        slide.style.transition = 'opacity 0.9s ease-in-out';
         const img = slide.querySelector('img');
         if(img) { img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; }
       });
 
-      console.log('✓ Carousel initialized:', slides.length, 'slides');
+      console.log('✓ Carousel initialized (crossfade):', slides.length, 'slides');
     }
 
     function goToSlide(n) {
       if(!gallery || !slides.length) return;
       currentSlide = n % slides.length;
-      gallery.style.transform = `translateX(${-100 * currentSlide}%)`;
+      slides.forEach((slide, i) => {
+        slide.style.opacity = i === currentSlide ? '1' : '0';
+      });
       dots.forEach((dot, i) => {
         dot.setAttribute('aria-current', i === currentSlide ? 'true' : 'false');
         dot.style.background = i === currentSlide ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)';
