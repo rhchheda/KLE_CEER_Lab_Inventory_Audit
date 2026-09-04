@@ -320,7 +320,7 @@
     <!-- Carousel Background -->
     <div class="gallery" id="galleryTrack" style="position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: flex; overflow: hidden;">
       <div class="slide" style="background: linear-gradient(135deg, #1a3a52, #0d1b3e);">
-        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-103-ground-floor.jpg" alt="LHC 103" onerror="this.style.display='none'" />
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/LHC-103-Ground-Floor.png" alt="LHC 103" onerror="this.style.display='none'" />
         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--gold-2); text-align: center;">
           <div>
             <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">🔬 LHC 103</div>
@@ -329,7 +329,7 @@
         </div>
       </div>
       <div class="slide" style="background: linear-gradient(135deg, #2a4a7a, #1a3a52);">
-        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-203-second-floor.jpg" alt="LHC 203" onerror="this.style.display='none'" />
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/LHC-203-Second-Floor.png" alt="LHC 203" onerror="this.style.display='none'" />
         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--gold-2); text-align: center;">
           <div>
             <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">⚡ LHC 203</div>
@@ -338,7 +338,7 @@
         </div>
       </div>
       <div class="slide" style="background: linear-gradient(135deg, #3a5a9a, #2a4a7a);">
-        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/lhc-303-third-floor.jpg" alt="LHC 303" onerror="this.style.display='none'" />
+        <img src="https://raw.githubusercontent.com/rhchheda/KLE_CEER_Lab_Inventory_Audit/main/assets/LHC-303-Third-Floor.png" alt="LHC 303" onerror="this.style.display='none'" />
         <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--gold-2); text-align: center;">
           <div>
             <div style="font-size: 28px; font-weight: 600; margin-bottom: 8px;">🤖 LHC 303</div>
@@ -580,12 +580,8 @@
     // ============= API WRAPPER FUNCTIONS =============
     async function callGAS(action, params = {}) {
       try {
-        const request = { action, ...params };
-        const response = await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(request),
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const qs = new URLSearchParams({ action, ...params });
+        const response = await fetch(GAS_URL + '?' + qs.toString());
         const data = await response.json();
         return data;
       } catch(err) {
